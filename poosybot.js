@@ -13,7 +13,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         console.log(name + " started.");
 
         DiscordClient = bind(DiscordClient);
-        auth();
+        DiscordClient.login(config.token)
     }
 
     function bind (DC) {
@@ -27,10 +27,6 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         })
 
         return DC
-    }
-
-    function auth () {
-        DiscordClient.login(config.token)
     }
 
     function paramRoute (msg) {
@@ -146,18 +142,6 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
             let commandPrefix = commandPrefixes[i]
             if (args[0] === commandPrefix[0] && args[1] === commandPrefix[1]) {
                 return true
-            }
-        }
-
-        return false
-    }
-
-    function getCommandString (str) {
-        for (let i = 0; i < msgPrefixes.length; i++) {
-            let msgPrefix = msgPrefixes[i]
-
-            if (str.indexOf(msgPrefix) === 0) {
-                return str.substring(msgPrefix.length + 1)
             }
         }
 
