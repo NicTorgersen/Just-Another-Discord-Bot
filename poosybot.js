@@ -36,6 +36,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
 
             switch (args[2]) {
                 case 'help':
+                case 'halp':
                     msg.channel.sendCode('javascript', [
                         'I have a set of very specific commands.',
                         'I may find you, I may kill you, but ultimately these are my commands though...',
