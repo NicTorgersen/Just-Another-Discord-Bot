@@ -2,8 +2,26 @@
 const http = require('http')
 
 function CatFactReader () {
+    let url = 'http://catfacts-api.appspot.com/api/facts'
+
+    function getMore (num, cb) {
+        if (num > 10)
+            num = 10
+
+        http.get(url + '?number=' + num, (result) => {
+            let body = ""
+
+            result.on('data', (chunk) => {
+                body += chunk
+            })
+
+            result.on('end', () => {
+                cb(JSON.parse(body.toString()))
+            })
+        })
+    }
+
     function getRandom (cb) {
-        let url = 'http://catfacts-api.appspot.com/api/facts'
         http.get(url, (result) => {
             let body = ""
 
@@ -12,14 +30,14 @@ function CatFactReader () {
             })
 
             result.on('end', () => {
-                let response = JSON.parse(body.toString())
-                cb(response)
+                cb(JSON.parse(body.toString()))
             })
         })
     }
 
     return {
-        getRandom: getRandom
+        getMore: getMore,
+        getRandom: getRandom,
     }
 }
 

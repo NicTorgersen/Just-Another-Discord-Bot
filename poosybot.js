@@ -7,6 +7,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
     const xkcd = new XKCDReader()
     const cfr = new CatFactReader()
     const msgPrefixes = config.messagePrefixes
+    const commandPrefixes = config.commandPrefixes
 
     function start () {
         console.log(name + " started.");
@@ -22,9 +23,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         })
 
         DC.on('message', msg => {
-            if (matchCommandPrefix(msg.content)) {
-                route(msg)
-            }
+            paramRoute(msg)
         })
 
         return DC
@@ -34,101 +33,107 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         DiscordClient.login(config.token)
     }
 
-    function route (msg) {
-        let msgPrefix = config.messagePrefix
+    function paramRoute (msg) {
+        const args = msg.content.split(' ')
 
-        // COMMANDS WITH PARAMETERS
-        //if ()
+        if (matchCommandParameterPrefix(args)) {
 
-        // GET SOMETHING COMMANDS
-        switch (getCommandString(msg.content)) {
-            case 'cat pic':
-            case 'cat':
-                var randomY = Math.floor((Math.random() * 800) + 1)
-                var randomX = Math.floor((Math.random() * 800) + 1)
-                msg.channel.sendMessage('http://placekitten.com/g/' + randomX +'/' + randomY)
-                break;
+            switch (args[2]) {
+                case 'help':
+                    msg.channel.sendCode('javascript', [
+                        'I have a set of very specific commands.',
+                        'I may find you, I may kill you, but ultimately these are my commands though...',
+                        'Address me with ´poosy pls` or ´poosy please`.',
+                        'xkcd:',
+                        '- specific {id}, returns a specific xkcd',
+                        '- random, returns a random xkcd',
+                        '- without any additional parameters it just gives todays xkcd',
+                        'dunno:',
+                        '- emote, sends a "dont know emoticon"',
+                        'give:',
+                        '- link, returns the link to invite this bot to a channel',
+                        'cat:',
+                        '- fact, returns a random cat fact',
+                        '- pic, returns a random cat pic with random dimensions',
+                        'EXAMPLE:',
+                        'poosy pls xkcd specific 354',
+                        'poosy pls dunno emote',
+                        'poosy pls cat fact',
+                        'poosy pls cat fact 10',
+                    ])
+                    break
 
-            case 'start new raid':
-                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'startNewRaid')) + 1)
-                msg.channel.sendMessage(words.startNewRaid[randomWord])
+                case 'raid':
+                    switch (args[4]) {
+                        case 'new':
+                            msg.channel.sendMessage('ok. but no. sorry.')
+                            break
+                    }
+                    break
 
-                break
+                case 'xkcd':
+                    switch (args[3]) {
+                        case 'specific':
+                            if (parseInt(args[4])) {
+                                let xkcdId = parseInt(args[4])
+                                xkcd.getSpecific(xkcdId, (res) => {
+                                    var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
+                                    msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                                })
+                            }
+                            break
 
-            case 'get todays xkcd':
-            case 'get me todays xkcd':
-            case 'latest xkcd':
-            case 'xkcd':
-                xkcd.getCurrent((res) => {
-                    var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
-                    msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
-                })
+                        case 'random':
+                            xkcd.getRandom((res) => {
+                                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
+                                msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                            })
+                            break
 
-                break
+                        default:
+                            xkcd.getCurrent((res) => {
+                                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
+                                msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                            })
+                            break
+                    }
+                    break
 
-            case 'get random xkcd':
-            case 'get me random xkcd':
-            case 'random xkcd':
-                xkcd.getRandom((res) => {
-                    var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
-                    msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
-                })
+                case 'dunno':
+                    if (args[3] === 'emote')
+                        msg.channel.sendMessage('¯\\_(ツ)_/¯')
+                    break
 
-                break
+                case 'give':
+                    if (args[3] === 'link')
+                        msg.channel.sendMessage("https://discordapp.com/oauth2/authorize?client_id=254081475001974784&scope=bot")
+                    break
 
-            case 'get me dunno emoticon':
-            case 'dunno':
-            case 'i dont know':
-                msg.channel.sendMessage('¯\\_(ツ)_/¯')
+                case 'cat':
+                    if (args[3] === 'fact') {
+                        if (typeof args[4] !== 'undefined') {
+                            let num = parseInt(args[4])
+                            let facts = ""
+                            cfr.getMore(num, (res) => {
+                                for (let i = 0; i < res.facts.length; i++)
+                                    res.facts[i] = '- ' + res.facts[i]
 
-                break
+                                msg.channel.sendCode('', res.facts)
+                            })
 
-            case 'cum for me':
-            case 'cum':
-                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'cumForMe')) + 1)
-                msg.channel.sendMessage(words.cumForMe[randomWord])
+                            return
+                        }
+                        cfr.getRandom((res) => {
+                            msg.channel.sendMessage(res.facts[0])
+                        })
+                    } else if (args[3] === 'pic') {
+                        var randomY = Math.floor((Math.random() * 800) + 1) + 100
+                        var randomX = Math.floor((Math.random() * 800) + 1) + 100
+                        msg.channel.sendMessage('http://placekitten.com/g/' + randomX +'/' + randomY)
+                    }
+                    break
+            }
 
-                break
-
-            case 'give cat fact':
-            case 'cat fact':
-                cfr.getRandom((res) => {
-                    msg.channel.sendMessage(res.facts[0])
-                })
-
-                break
-
-            case 'who da best?':
-                msg.channel.sendMessage("Mal'Damba, of course")
-
-                break
-
-            case 'how long is my penis?':
-            case 'how long is my dick?':
-            case 'how long is my penis':
-            case 'how long is my dick':
-            case 'my dicksize':
-                var author = msg.author.username
-                var validNames = ['Nic', 'Mal\'Damba']
-                if (validNames.indexOf(author) !== -1) {
-                    msg.channel.sendMessage(author + " has a huge dick.")
-                } else {
-                    msg.channel.sendMessage(author + " has a tiny dick.")
-                }
-
-
-                break
-
-            case 'give add link':
-            case 'give link':
-                msg.channel.sendMessage("https://discordapp.com/oauth2/authorize?client_id=254081475001974784&scope=bot")
-
-                break
-
-            case false:
-                msg.channel.sendMessage('Sorry cunt, I\'m afraid I can\'t fucking do that.')
-
-                break
         }
     }
 
@@ -136,14 +141,14 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         return words[child].length -1
     }
 
-    function matchCommandPrefix (str) {
-        for (let i = 0; i < msgPrefixes.length; i++) {
-            let msgPrefix = msgPrefixes[i]
-
-            if (str.indexOf(msgPrefix) === 0) {
+    function matchCommandParameterPrefix (args) {
+        for (let i = 0; i < commandPrefixes.length; i++) {
+            let commandPrefix = commandPrefixes[i]
+            if (args[0] === commandPrefix[0] && args[1] === commandPrefix[1]) {
                 return true
             }
         }
+
         return false
     }
 
