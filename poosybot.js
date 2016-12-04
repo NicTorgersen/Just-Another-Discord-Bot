@@ -61,11 +61,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     break
 
                 case 'raid':
-                    switch (args[4]) {
-                        case 'new':
-                            msg.channel.sendMessage('ok. but no. sorry.')
-                            break
-                    }
+                    msg.channel.sendMessage('ok. but no. sorry.')
                     break
 
                 case 'xkcd':
