@@ -70,23 +70,20 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                             if (parseInt(args[4])) {
                                 let xkcdId = parseInt(args[4])
                                 xkcd.getSpecific(xkcdId, (res) => {
-                                    var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
-                                    msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                                    msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
                                 })
                             }
                             break
 
                         case 'random':
                             xkcd.getRandom((res) => {
-                                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
-                                msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
                             })
                             break
 
                         default:
                             xkcd.getCurrent((res) => {
-                                var randomWord = Math.floor((Math.random() * getStringsLength(words, 'beingSmartini')) + 1)
-                                msg.channel.sendMessage(words.beingSmartini[randomWord] + " " + res.img)
+                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
                             })
                             break
                     }
@@ -128,6 +125,11 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
             }
 
         }
+    }
+
+    function getRandomWord (words, objName) {
+        var rnd = Math.floor((Math.random() * getStringsLength(words, objName)) + 1)
+        return words[objName][rnd]
     }
 
     function getStringsLength (words, child) {
