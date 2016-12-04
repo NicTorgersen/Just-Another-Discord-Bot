@@ -10,8 +10,7 @@ function XKCDReader () {
             })
 
             result.on('end', () => {
-                let response = JSON.parse(body.toString())
-                cb(response)
+                cb(JSON.parse(body.toString()))
             })
         })
     }
@@ -28,8 +27,7 @@ function XKCDReader () {
                 })
 
                 result.on('end', () => {
-                    let response = JSON.parse(body.toString())
-                    cb(response)
+                    cb(JSON.parse(body.toString()))
                 })
             })
         }
@@ -48,8 +46,7 @@ function XKCDReader () {
                 })
 
                 result.on('end', () => {
-                    let response = JSON.parse(body.toString())
-                    cb(response)
+                    cb(JSON.parse(body.toString()))
                 })
             })
         })
