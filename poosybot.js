@@ -44,7 +44,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                         'xkcd:',
                         '- specific {id}, returns a specific xkcd',
                         '- random, returns a random xkcd',
-                        '- without any additional parameters it just gives todays xkcd',
+                        '- without any additional parameters it just gives the most recent xkcd',
                         'dunno:',
                         '- emote, sends a "dont know emoticon"',
                         'give:',
