@@ -5,7 +5,7 @@ const words = require('./words.js')
 const poosybotDb = require('./db_abstraction.js')
 const Discord = require('discord.js')
 const client = new Discord.Client();
-const poosybot = new PoosyBot(client, poosybotDb, config, words);
+const poosybot = new PoosyBot(client, poosybotDb(), config, words);
 
 process.on('unhandledRejection', function (err) {
     throw err;

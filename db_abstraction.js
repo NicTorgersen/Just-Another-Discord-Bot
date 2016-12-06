@@ -7,17 +7,66 @@ module.exports = function () {
         return new Date(date.getTime() + minutes*60000);
     }
 
+    function getUserPermission (userid, permissionid, cb) {
+        db.get('SELECT id, userid, permission FROM permissions WHERE userid = ? AND permission = ?', [userid, permissionid], function (err, row) {
+            console.log(row)
+            if (typeof row == 'undefined') {
+                cb(false)
+                return
+            }
+            cb(true)
+            return
+        })
+    }
+
+    function addUser(userid, cb) {
+        db.get('SELECT id, userid FROM users WHERE userid = ?', [userid], function (err, row) {
+            if (typeof row == 'undefined') {
+                var stmt = db.prepare('INSERT INTO users (userid, money) VALUES (?, ?)')
+                stmt.run([userid, config.startMoney], function (err) {
+                    cb({success: 'User added to db', lastID: this.lastID})
+                })
+                stmt.finalize()
+            } else {
+                cb({error: 'User already exists', errorId: 1})
+            }
+
+        })
+    }
+
     return {
-        addUser: function (userid, cb) {
-            db.get('SELECT id, userid FROM users WHERE userid = ?', [userid], function (err, row) {
+        getUserPermission: getUserPermission,
+        addUser: addUser,
+        getMoney: function (userid, cb) {
+            db.get('SELECT money FROM users WHERE userid = ?', [userid], function (err, row) {
+                if (typeof row == 'undefined') {
+                    addUser(userid, (ret) => {
+                        if(ret.hasOwnProperty('success')) {
+                            cb({money: config.startMoney})
+                            return
+                        }
+                    })
+                } else {
+                    cb(row)
+                }
+            })
+        },
+        giveMoney: function (userid, amount, cb) {
+            db.get('SELECT id, money FROM users WHERE userid = ?', [userid], function (err, row) {
+                console.log(row)
                 if (typeof row == 'undefined') {
                     var stmt = db.prepare('INSERT INTO users (userid, money) VALUES (?, ?)')
-                    stmt.run([userid, config.startMoney], function (err) {
-                        cb({success: 'User added to db', lastID: this.lastID})
+                    stmt.run([userid, amount], function (err) {
+                        cb({ success: 'User added to db with money ' + amount, lastID: this.lastID })
                     })
                     stmt.finalize()
                 } else {
-                    cb({error: 'User already exists', errorId: 1})
+                    var stmt = db.prepare('UPDATE users SET money = (money + ?) WHERE userid = ?')
+                    stmt.run([amount, userid], function (err) {
+                        console.log(err)
+                        cb({ success: 'Updated user in db with money ' + (amount + row.money) })
+                    })
+                    stmt.finalize()
                 }
 
             })

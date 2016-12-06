@@ -6,5 +6,7 @@ module.exports = {
     ],
     databaseName: 'poosybot.db',
 
-    startMoney: 0
+    youtubeApiKey: '',
+
+    startMoney: 0,
 }
