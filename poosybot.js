@@ -78,7 +78,9 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     break
 
                 case 'raid':
-                    msg.channel.sendMessage('ok. but no. sorry.')
+                    gameMan.start(msg, (games) => {
+                        console.log(games)
+                    })
                     break
 
                 case 'xkcd':
