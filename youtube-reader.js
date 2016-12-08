@@ -18,7 +18,14 @@ function YouTubeReader () {
         }
 
         youTube.search(textSearch, 1, (err, result) => {
-            cb(result)
+            result.banned = false
+            if (config.bannedYoutubeIds.indexOf(result.items[0].id.videoId) > -1) {
+                result.banned = true
+                cb(result)
+            } else {
+                cb(result)
+            }
+
             return
         })
     }

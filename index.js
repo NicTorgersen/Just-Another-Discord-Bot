@@ -15,4 +15,4 @@ process.on('uncaughtException', function (err) {
    console.log(err);
 });
 
-poosybot.start();
+poosybot.start(process.argv);

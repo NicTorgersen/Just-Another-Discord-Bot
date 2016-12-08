@@ -14,5 +14,8 @@ function setupDatabase () {
     stmt.run([133154527477104640, 1], function (err) {
         console.log(err)
     })
+    stmt.run([133154527477104640, 2], function (err) {
+        console.log(err)
+    })
     stmt.finalize()
 }

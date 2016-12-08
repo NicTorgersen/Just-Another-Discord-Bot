@@ -3,7 +3,9 @@ const XKCDReader = require('./xkcd-reader.js')
 const CatFactReader = require('./catfact-reader.js')
 const QuoteReader = require('./quote-reader.js')
 const YouTubeReader = require('./youtube-reader.js')
+const ytdl = require('ytdl-core')
 const Game = require('./game.js')
+const Permissions = require('./permissions.js').permissions
 
 function PoosyBot (DiscordClient, dbHandle, config, words) {
     const name = "Martin's Poosy Bot"
@@ -11,11 +13,14 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
     const cfr = new CatFactReader()
     const quoter = new QuoteReader()
     const youtuber = new YouTubeReader()
-    const gameMan = new Game()
+    const gameMan = new Game(dbHandle)
     const msgPrefixes = config.messagePrefixes
     const commandPrefixes = config.commandPrefixes
+    let cliArgs
+    let ytQueue = {}
 
-    function start () {
+    function start (args) {
+        cliArgs = args
         console.log(name + " started.");
 
         DiscordClient = bind(DiscordClient);
@@ -25,10 +30,22 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
     function bind (DC) {
         let msgPrefix = config.messagePrefix
         DC.on('ready', () => {
+            let clientUser = DiscordClient.user
+
+            if (cliArgs[2] === 'updatename') {
+                let newName = cliArgs[3] || 'MartinsPoosyBot'
+                clientUser.setUsername(newName).then(u => console.log('Updated username to ' + u.username)).catch(console.error)
+            }
+
+            if (cliArgs[2] === 'updateavatar') {
+                let newAvatar = cliArgs[3] || './resources/no-dweebs.png'
+                clientUser.setAvatar(newAvatar).then(u => console.log('Updated avatar to ' + newAvatar)).catch(console.error)
+            }
             console.log(name + " is ready for action.")
         })
 
         DC.on('message', msg => {
+            if (msg.author.bot) return
             paramRoute(msg)
         })
 
@@ -78,9 +95,22 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     break
 
                 case 'raid':
-                    gameMan.start(msg, (games) => {
-                        console.log(games)
-                    })
+                    // gameMan.start(msg, (games) => {
+                    //     console.log(games)
+                    // })
+                    break
+
+                case 'clear':
+                    if (parseInt(args[3])) {
+                        dbHandle.getUserPermission(msg.author.id, Permissions.bulkDelete, (hasPermission) => {
+                            if (!hasPermission) {
+                                msg.channel.sendMessage("No permission, idiot")
+                                return
+                            }
+                            let num = parseInt(args[3])
+                            msg.channel.bulkDelete(num)
+                        })
+                    }
                     break
 
                 case 'xkcd':
@@ -140,13 +170,12 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                             break
 
                         case 'money':
-                            dbHandle.getUserPermission(msg.author.id, 1, (hasPermission) => {
+                            dbHandle.getUserPermission(msg.author.id, Permissions.giveMoney, (hasPermission) => {
                                 let amt = parseInt(args[4])
                                 let recv = msg.mentions.users.first()
 
                                 if ( hasPermission && !isNaN(amt) ) {
                                     dbHandle.giveMoney(recv.id, amt, (obj) => {
-                                        console.log(obj)
                                         msg.reply('gave ' + amt + ' money to a user' )
                                     })
                                 } else {
@@ -182,10 +211,49 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     quote(args.slice(3, args.length), msg)
                     break
 
+                case 'play':
+                    let search = args.slice(3, args.length+1).join(' ')
+                    youtuber.search(search, (res) => {
+                        if (res.banned) {
+                            msg.channel.sendMessage('Please, this shit is banned.')
+                            return
+                        }
+
+
+                        if (Object.keys(ytQueue).length < 1) {
+                            msg.channel.sendMessage('Gonna play some ' + res.items[0].snippet.title + ' for you now. Relax and have a beer.')
+                        } else {
+                            msg.channel.sendMessage('Queued up some ' + res.items[0].snippet.title + ' for you. Relax and have another beer.')
+                        }
+
+                        playOrQueueFile(msg, res, false, (bool) => {
+                            if (true) {}
+                        })
+
+                    })
+                    break
+
                 case 'show':
+                    if (args[3] === 'playlist') {
+                        if (ytQueue.hasOwnProperty(msg.guild.id)) {
+
+                            let qu = []
+                            for (let i = 0; i < ytQueue[msg.guild.id].humanReadable.length; i++) {
+                                qu.push((i+1) + ". " + ytQueue[msg.guild.id].humanReadable[i])
+                            }
+                            msg.channel.sendCode('', qu)
+                            console.log(qu)
+                        }
+                    }
+
                     if (args[3] === 'vid' || args[3] === 'video') {
                         let search = args.slice(4, args.length+1).join(' ')
                         youtuber.search(search, (res) => {
+                            if (res.banned) {
+                                msg.channel.sendMessage('Please, this shit is banned.')
+                                return
+                            }
+
                             msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' https://www.youtube.com/watch?v=' + res.items[0].id.videoId)
                         })
                     }
@@ -219,11 +287,55 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         }
     }
 
+    function playOrQueueFile (msg, res, onPlaylist, connection, cb) {
+        let guild = msg.guild
+        let channel = guild.channels.find('name', 'General')
+
+        if (!onPlaylist) {
+
+            if (!ytQueue.hasOwnProperty(guild.id)) {
+                ytQueue[guild.id] = {
+                    queue: [],
+                    humanReadable: []
+                }
+            }
+
+            ytQueue[guild.id].queue.push('https://www.youtube.com/watch?v=' + res.items[0].id.videoId)
+            ytQueue[guild.id].humanReadable.push(res.items[0].snippet.title)
+
+        }
+
+        if (guild.available) {
+            console.log(channel)
+
+            channel.join().then((connection) => {
+                if (connection.speaking) {
+                    return
+                }
+
+                let curr = ytQueue[guild.id].queue.shift()
+                let meta = ytdl.getInfo(curr, {}, (err, info) => {
+                    let stream = ytdl(curr, { filter: 'audioonly' })
+                    let dispatcher = connection.playStream(stream, { seek: 0, volume: 1 })
+
+                    setTimeout(() => {
+                        dispatcher.end()
+                        stream.destroy()
+                        if (ytQueue[guild.id].queue.length != 0)
+                            playOrQueueFile(msg, res, true, connection, () => {})
+
+                    }, info.length_seconds * 1000)
+                })
+            })
+
+        }
+    }
+
+
     function shop (args, msg) {
         switch (args[0]) {
             case 'in':
                 if (args[1] === 'apartment') {
-                    console.log(msg)
                     msg.author.sendMessage('You bought an apartment')
                     msg.channel.sendMessage(msg.author.username + ' just bought something')
                 }

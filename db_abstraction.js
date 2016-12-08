@@ -9,7 +9,6 @@ module.exports = function () {
 
     function getUserPermission (userid, permissionid, cb) {
         db.get('SELECT id, userid, permission FROM permissions WHERE userid = ? AND permission = ?', [userid, permissionid], function (err, row) {
-            console.log(row)
             if (typeof row == 'undefined') {
                 cb(false)
                 return
@@ -53,7 +52,6 @@ module.exports = function () {
         },
         giveMoney: function (userid, amount, cb) {
             db.get('SELECT id, money FROM users WHERE userid = ?', [userid], function (err, row) {
-                console.log(row)
                 if (typeof row == 'undefined') {
                     var stmt = db.prepare('INSERT INTO users (userid, money) VALUES (?, ?)')
                     stmt.run([userid, amount], function (err) {

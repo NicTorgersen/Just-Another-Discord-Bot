@@ -8,6 +8,9 @@ function CatFactReader () {
         if (num > 10)
             num = 10
 
+        if (num < 1)
+            num = 1
+
         http.get(url + '?number=' + num, (result) => {
             let body = ""
 

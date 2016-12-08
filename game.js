@@ -1,99 +1,62 @@
 const moment = require('moment')
+const config = require('./config.js')
 
-function GameInstance (user, ending, prize) {
+function GameInstance (ending, prize) {
     this.players = {}
     this.ending = ending
     this.ended = false
     this.prize = prize
 
-    addPlayer(user)
-
     // adds a player to the game
-    function addPlayer (user) {
-        if (!this.ended)
+    this.addPlayer = function (user) {
+        if (this.ended)
             return false
 
-        if (typeof user === 'object') {
-            this.players[user.id] = user
-            return true
-        }
+        this.players[user.id] = user
 
-        return false
+        return true
     }
 
-    function cycle (time, cb) {
-        if (this.ending < time) {
-            this.ended = true
-            return
-        } else {
-            setTimeout(function () {
-                this.ended = true
-                cb(this)
-            }, ending.diff(time))
+    // picks a random winner weighted on something later on
+    function pickWinner () {
+        let pRnd = []
+
+        for (key in this.players) {
+            pRnd.push(this.players[key])
         }
 
+        let ticket = Math.floor((Math.random() * pRnd.length) + 1)
+        return pRnd[ticket]
+
     }
+
 }
 
-function Game () {
+function Game (dbHandle) {
 
     /*
     object responsible for holding the games going on
     */
-    let games = {}
+    this.games = {}
 
     // sets game ending time
-    // invoked by a user, so we get the User object
-    function start (msg, cb) {
+    // invoked by a user, so we get the Message object with all its perks
+    this.start = function (msg) {
+        let channelId = msg.channel.id
 
-        if (!games.hasOwnProperty(msg.channel.id)) {
-            let game = games[msg.channel.id] = new GameInstance(msg.author, moment().add(30, 's'))
-            game.cycle(moment(), (gameObj) => {
-                if (gameObj.ended || gameObj.ending < moment()) {
-                    let winner = pickWinner(gameObj.players)
-                    msg.channel.sendMessage("Well, some of you didn't make it. At least @"+winner.username+" got out alive with all the poosyloons.")
-
-                    delete games[msg.channel.id]
-                    cb(games)
-                    return true
-                }
-            })
-
-            msg.channel.sendMessage("@" + msg.author.username + " has started a raid.")
-            return true
-        } else if (games.hasOwnProperty(msg.channel.id) && games[msg.channel.id].ended !== true) {
-            cb(games)
-            if (game.players.hasOwnProperty(msg.author.id))
-                return false
-
-            let game = games[msg.channel.id]
+        if (!games.hasOwnProperty(channelId)) {
+            let game = newGame(channelId, moment().add(3, 's'), config.defaultRaidPrize)
             game.addPlayer(msg.author)
-            msg.reply("you're in on it.")
-
-            return true
         }
 
-        return false
     }
 
-    // picks a random winner weighted on something later on
-    function pickWinner (players) {
-        let winningTicket =  Math.floor((Math.random() * players.length - 1) + 1)
 
-        return players[winningTicket]
-    }
+    function newGame (channelId, ending, prize) {
+        let game = new GameInstance(ending, prize)
+        this.games[channelId] = game
 
-    function update () {
-        if (games.length > 0) {
-            for (let i = 0; i < games.length; i++) {
-                let cGame = games[i]
-
-                if (cGame.ended)
-                    return
-
-                cGame.tick()
-            }
-        }
+        return game
     }
 
 }
