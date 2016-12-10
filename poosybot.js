@@ -212,6 +212,18 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     break
 
                 case 'play':
+
+                    if (args[3] === 'next') {
+                        if (ytQueue.hasOwnProperty(msg.guild.id)) {
+                            if (ytQueue[msg.guild.id].queue.length > 0) {
+                                playOrQueueStream(msg, [], true, (bool) => {
+                                    if (true) {}
+                                })
+                            }
+                        }
+                        return
+                    }
+
                     let search = args.slice(3, args.length+1).join(' ')
                     youtuber.search(search, (res) => {
                         if (res.banned) {
@@ -226,23 +238,35 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                             msg.channel.sendMessage('Queued up some ' + res.items[0].snippet.title + ' for you. Relax and have another beer.')
                         }
 
-                        playOrQueueFile(msg, res, false, (bool) => {
+                        playOrQueueStream(msg, res, false, (bool) => {
                             if (true) {}
                         })
 
                     })
                     break
 
+                case 'kill':
+                    if (args[3] === 'this' && args[4] === 'shit')
+                        stopStream(msg)
+                    break
+                case 'stop':
+                    stopStream(msg)
+                    break
+
                 case 'show':
                     if (args[3] === 'playlist') {
                         if (ytQueue.hasOwnProperty(msg.guild.id)) {
+
+                            if (ytQueue[msg.guild.id].humanReadable.length < 1) {
+                                msg.channel.sendMessage('Nothing in queue.\n\n\n\n\n\ncunt')
+                                return
+                            }
 
                             let qu = []
                             for (let i = 0; i < ytQueue[msg.guild.id].humanReadable.length; i++) {
                                 qu.push((i+1) + ". " + ytQueue[msg.guild.id].humanReadable[i])
                             }
                             msg.channel.sendCode('', qu)
-                            console.log(qu)
                         }
                     }
 
@@ -287,7 +311,40 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         }
     }
 
-    function playOrQueueFile (msg, res, onPlaylist, connection, cb) {
+    function stopStream (msg, soft) {
+        let guild = msg.guild
+        soft = soft || false
+
+        if (!ytQueue.hasOwnProperty(guild.id)) return
+
+        let connection = ytQueue[guild.id].connection
+        let stream = ytQueue[guild.id].stream
+        let queue = ytQueue[guild.id].queue
+        let humanReadable = ytQueue[guild.id].humanReadable
+
+        if (stream) {
+            stream.destroy()
+        }
+
+        if (connection && !soft) {
+            connection.disconnect()
+        }
+
+        if (queue.length && !soft) {
+            ytQueue[guild.id].queue = []
+        }
+
+        if (humanReadable.length && !soft) {
+            ytQueue[guild.id].humanReadable = []
+        }
+
+        if (!soft) {
+            delete ytQueue[guild.id]
+        }
+
+    }
+
+    function playOrQueueStream (msg, res, onPlaylist, connection, cb) {
         let guild = msg.guild
         let channel = guild.channels.find('name', 'General')
 
@@ -296,7 +353,10 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
             if (!ytQueue.hasOwnProperty(guild.id)) {
                 ytQueue[guild.id] = {
                     queue: [],
-                    humanReadable: []
+                    humanReadable: [],
+                    connection: '',
+                    stream: '',
+                    timeoutId: undefined
                 }
             }
 
@@ -306,23 +366,31 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         }
 
         if (guild.available) {
-            console.log(channel)
-
             channel.join().then((connection) => {
+                ytQueue[guild.id].connection = connection
+
                 if (connection.speaking) {
                     return
                 }
 
                 let curr = ytQueue[guild.id].queue.shift()
                 let meta = ytdl.getInfo(curr, {}, (err, info) => {
+
                     let stream = ytdl(curr, { filter: 'audioonly' })
                     let dispatcher = connection.playStream(stream, { seek: 0, volume: 1 })
 
-                    setTimeout(() => {
+                    ytQueue[guild.id].stream = stream
+
+                    ytQueue[guild.id].timeoutId = setTimeout(() => {
                         dispatcher.end()
                         stream.destroy()
-                        if (ytQueue[guild.id].queue.length != 0)
-                            playOrQueueFile(msg, res, true, connection, () => {})
+                        ytQueue[guild.id].humanReadable.shift()
+
+                        if (ytQueue[guild.id].queue.length != 0) {
+                            playOrQueueStream(msg, res, true, connection, () => {})
+                        } else {
+                            stopStream(msg, false)
+                        }
 
                     }, info.length_seconds * 1000)
                 })
