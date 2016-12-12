@@ -3,6 +3,7 @@ const XKCDReader = require('./xkcd-reader.js')
 const CatFactReader = require('./catfact-reader.js')
 const QuoteReader = require('./quote-reader.js')
 const YouTubeReader = require('./youtube-reader.js')
+const GiphyReader = require('./giphy-reader.js')
 const ytdl = require('ytdl-core')
 const Game = require('./game.js')
 const Permissions = require('./permissions.js').permissions
@@ -13,6 +14,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
     const cfr = new CatFactReader()
     const quoter = new QuoteReader()
     const youtuber = new YouTubeReader()
+    const giphyr = new GiphyReader()
     const gameMan = new Game(dbHandle)
     const msgPrefixes = config.messagePrefixes
     const commandPrefixes = config.commandPrefixes
@@ -68,7 +70,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     msg.channel.sendCode('', [
                         'I have a set of very specific commands.',
                         'I may find you, I may kill you, but ultimately these are my commands though...',
-                        'Address me with ´poosy pls` or ´poosy please`.',
+                        'Address me with `$` or ´poosy pls`.',
                         'xkcd:',
                         '- specific {id}, returns a specific xkcd',
                         '- random, returns a random xkcd',
@@ -87,10 +89,18 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                         'cat:',
                         '- fact, returns a random cat fact',
                         '- pic, returns a random cat pic with random dimensions',
+                        'play:',
+                        '- search phrase',
+                        '- next',
+                        'stop:',
+                        'stop playing all together',
                         'EXAMPLE:',
-                        'poosy pls xkcd specific 354',
-                        'poosy pls cat fact',
-                        'poosy pls cat fact 10',
+                        '$ xkcd specific 354',
+                        '$ cat fact',
+                        '$ cat fact 10',
+                        '$ play queen somebody to love',
+                        '$ play next',
+                        '$ stop',
                     ])
                     break
 
@@ -216,7 +226,8 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     if (args[3] === 'next') {
                         if (ytQueue.hasOwnProperty(msg.guild.id)) {
                             if (ytQueue[msg.guild.id].queue.length > 0) {
-                                playOrQueueStream(msg, [], true, (bool) => {
+                                stopStream(msg, true)
+                                playOrQueueStream(msg, [], true, ytQueue[msg.guild.id].connection, (bool) => {
                                     if (true) {}
                                 })
                             }
@@ -256,17 +267,13 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                 case 'show':
                     if (args[3] === 'playlist') {
                         if (ytQueue.hasOwnProperty(msg.guild.id)) {
-
-                            if (ytQueue[msg.guild.id].humanReadable.length < 1) {
-                                msg.channel.sendMessage('Nothing in queue.\n\n\n\n\n\ncunt')
-                                return
-                            }
-
                             let qu = []
                             for (let i = 0; i < ytQueue[msg.guild.id].humanReadable.length; i++) {
                                 qu.push((i+1) + ". " + ytQueue[msg.guild.id].humanReadable[i])
                             }
                             msg.channel.sendCode('', qu)
+                        } else {
+                            msg.channel.sendMessage('Nothing in queue right now, to queue: `poosy pls play [search]`')
                         }
                     }
 
@@ -279,6 +286,18 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                             }
 
                             msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' https://www.youtube.com/watch?v=' + res.items[0].id.videoId)
+                        })
+                    }
+
+                    if (args[3] === 'gif') {
+                        let tag = args.slice(4, args.length+1).join(' ') || 'cat'
+
+                        giphyr.search(tag, (res) => {
+                            if (typeof res === 'string') {
+                                msg.channel.sendMessage(res)
+                            } else {
+                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' ' + res.image_url)
+                            }
                         })
                     }
                     break
@@ -324,6 +343,12 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
 
         if (stream) {
             stream.destroy()
+
+            if (ytQueue[guild.id].dispatcher)
+                ytQueue[guild.id].dispatcher.end()
+
+            if (ytQueue[guild.id].timeoutId)
+                clearTimeout(ytQueue[guild.id].timeoutId)
         }
 
         if (connection && !soft) {
@@ -373,11 +398,17 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     return
                 }
 
-                let curr = ytQueue[guild.id].queue.shift()
+                let curr = ytQueue[guild.id].queue.shift() // get first element from queue
                 let meta = ytdl.getInfo(curr, {}, (err, info) => {
 
-                    let stream = ytdl(curr, { filter: 'audioonly' })
-                    let dispatcher = connection.playStream(stream, { seek: 0, volume: 1 })
+                    if (err) {
+                        console.log(err)
+                        stopStream(msg, false) // if an error happens, just stop pls
+                        return
+                    }
+
+                    let stream = ytdl(curr, { filter: 'audioonly' }) // get audioonly stream from youtube
+                    let dispatcher = ytQueue[guild.id].dispatcher = connection.playStream(stream, { seek: 0, volume: 1 }) // we need dispatcher to end stream later
 
                     ytQueue[guild.id].stream = stream
 
@@ -432,6 +463,10 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
     function matchCommandParameterPrefix (args) {
         for (let i = 0; i < commandPrefixes.length; i++) {
             let commandPrefix = commandPrefixes[i]
+            if (commandPrefix.length === 1 && args[0] === commandPrefix[0]) {
+                return true
+            }
+
             if (args[0] === commandPrefix[0] && args[1] === commandPrefix[1]) {
                 return true
             }
