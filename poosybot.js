@@ -1,4 +1,4 @@
-"use strict"
+'use strict'
 const XKCDReader = require('./xkcd-reader.js')
 const CatFactReader = require('./catfact-reader.js')
 const QuoteReader = require('./quote-reader.js')
@@ -9,7 +9,7 @@ const Game = require('./game.js')
 const Permissions = require('./permissions.js').permissions
 
 function PoosyBot (DiscordClient, dbHandle, config, words) {
-    const name = "Martin's Poosy Bot"
+    const name = 'Martin\'s Poosy Bot'
     const xkcd = new XKCDReader()
     const cfr = new CatFactReader()
     const quoter = new QuoteReader()
@@ -23,7 +23,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
 
     function start (args) {
         cliArgs = args
-        console.log(name + " started.");
+        console.log(name + ' started.');
 
         DiscordClient = bind(DiscordClient);
         DiscordClient.login(config.token)
@@ -43,7 +43,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                 let newAvatar = cliArgs[3] || './resources/no-dweebs.png'
                 clientUser.setAvatar(newAvatar).then(u => console.log('Updated avatar to ' + newAvatar)).catch(console.error)
             }
-            console.log(name + " is ready for action.")
+            console.log(name + ' is ready for action.')
         })
 
         DC.on('message', msg => {
@@ -76,7 +76,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                         '- random, returns a random xkcd',
                         '- without any additional parameters it just gives the most recent xkcd',
                         'emote:',
-                        '- dunno, sends a "dont know emoticon"',
+                        '- dunno, sends a 'dont know emoticon'',
                         '- lenny, sends a lenny face',
                         'get:',
                         '- money, returns the amount of money you got',
@@ -114,7 +114,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     if (parseInt(args[3])) {
                         dbHandle.getUserPermission(msg.author.id, Permissions.bulkDelete, (hasPermission) => {
                             if (!hasPermission) {
-                                msg.channel.sendMessage("No permission, idiot")
+                                msg.channel.sendMessage('No permission, idiot')
                                 return
                             }
                             let num = parseInt(args[3])
@@ -129,20 +129,20 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                             if (parseInt(args[4])) {
                                 let xkcdId = parseInt(args[4])
                                 xkcd.getSpecific(xkcdId, (res) => {
-                                    msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
+                                    msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' ' + res.img)
                                 })
                             }
                             break
 
                         case 'random':
                             xkcd.getRandom((res) => {
-                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
+                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' ' + res.img)
                             })
                             break
 
                         default:
                             xkcd.getCurrent((res) => {
-                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + " " + res.img)
+                                msg.channel.sendMessage(getRandomWord(words, 'beingSmartini') + ' ' + res.img)
                             })
                             break
                     }
@@ -176,7 +176,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                 case 'give':
                     switch (args[3]) {
                         case 'link':
-                            msg.channel.sendMessage("https://discordapp.com/oauth2/authorize?client_id=254081475001974784&scope=bot")
+                            msg.channel.sendMessage('https://discordapp.com/oauth2/authorize?client_id=254081475001974784&scope=bot')
                             break
 
                         case 'money':
@@ -210,9 +210,9 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
 
                             dbHandle.getMoney(recv.id, (obj) => {
                                 if (mentioned)
-                                    msg.reply(recv.username + " has " + obj.money + " poosyloons.")
+                                    msg.reply(recv.username + ' has ' + obj.money + ' poosyloons.')
                                 else
-                                    msg.reply("you have " + obj.money + " poosyloons.")
+                                    msg.reply('you have ' + obj.money + ' poosyloons.')
                             })
                     }
                     break
@@ -222,6 +222,15 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     break
 
                 case 'play':
+
+                    if (args[3] === 'kuk') {
+                        playAudioFile(msg, 'resources/audio/6-meter-kuk1.wav', (connection) => {
+                            setTimeout(() => {
+                                connection.disconnect()
+                            }, 3000) // the file is one second long
+                        })
+                        return
+                    }
 
                     if (args[3] === 'next') {
                         if (ytQueue.hasOwnProperty(msg.guild.id)) {
@@ -269,7 +278,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                         if (ytQueue.hasOwnProperty(msg.guild.id)) {
                             let qu = []
                             for (let i = 0; i < ytQueue[msg.guild.id].humanReadable.length; i++) {
-                                qu.push((i+1) + ". " + ytQueue[msg.guild.id].humanReadable[i])
+                                qu.push((i+1) + '. ' + ytQueue[msg.guild.id].humanReadable[i])
                             }
                             msg.channel.sendCode('', qu)
                         } else {
@@ -306,7 +315,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                     if (args[3] === 'fact') {
                         if (typeof args[4] !== 'undefined') {
                             let num = parseInt(args[4])
-                            let facts = ""
+                            let facts = ''
                             cfr.getMore(num, (res) => {
                                 for (let i = 0; i < res.facts.length; i++)
                                     res.facts[i] = '- ' + res.facts[i]
@@ -430,6 +439,25 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
         }
     }
 
+    function playAudioFile (msg, filePath, cb) {
+        let guild = msg.guild
+        let channel = guild.channels.find('name', 'General')
+
+        if (!ytQueue.hasOwnProperty(guild.id)) {
+            ytQueue[guild.id] = {
+                queue: [],
+                humanReadable: [],
+                connection: '',
+                stream: '',
+                timeoutId: undefined
+            }
+        }
+
+        channel.join().then((connection) => {
+            let dispatcher = connection.playFile(filePath)
+            cb(connection)
+        })
+    }
 
     function shop (args, msg) {
         switch (args[0]) {
