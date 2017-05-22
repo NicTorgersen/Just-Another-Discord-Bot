@@ -9,7 +9,7 @@ const Game = require('./game.js')
 const Permissions = require('./permissions.js').permissions
 
 function PoosyBot (DiscordClient, dbHandle, config, words) {
-    const name = 'Martin\'s Poosy Bot'
+    const name = 'Just Another Discord Bot'
     const xkcd = new XKCDReader()
     const cfr = new CatFactReader()
     const quoter = new QuoteReader()
@@ -76,7 +76,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
                         '- random, returns a random xkcd',
                         '- without any additional parameters it just gives the most recent xkcd',
                         'emote:',
-                        '- dunno, sends a 'dont know emoticon'',
+                        '- dunno, sends a \'dont know emoticon\'',
                         '- lenny, sends a lenny face',
                         'get:',
                         '- money, returns the amount of money you got',
