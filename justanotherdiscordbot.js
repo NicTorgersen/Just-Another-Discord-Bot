@@ -8,7 +8,7 @@ const ytdl = require('ytdl-core')
 const Game = require('./game.js')
 const Permissions = require('./permissions.js').permissions
 
-function PoosyBot (DiscordClient, dbHandle, config, words) {
+function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
     const name = 'Just Another Discord Bot'
     const xkcd = new XKCDReader()
     const cfr = new CatFactReader()
@@ -35,7 +35,7 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
             let clientUser = DiscordClient.user
 
             if (cliArgs[2] === 'updatename') {
-                let newName = cliArgs[3] || 'MartinsPoosyBot'
+                let newName = cliArgs[3] || 'JustAnotherDiscordBot'
                 clientUser.setUsername(newName).then(u => console.log('Updated username to ' + u.username)).catch(console.error)
             }
 
@@ -510,4 +510,4 @@ function PoosyBot (DiscordClient, dbHandle, config, words) {
 
 
 
-module.exports = PoosyBot;
+module.exports = JustAnotherDiscordBot;

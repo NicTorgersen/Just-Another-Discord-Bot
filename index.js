@@ -1,5 +1,5 @@
 "use strict"
-const PoosyBot = require('./poosybot.js')
+const PoosyBot = require('./justanotherdiscordbot.js')
 const config = require('./config.js')
 const words = require('./words.js')
 const poosybotDb = require('./db_abstraction.js')
