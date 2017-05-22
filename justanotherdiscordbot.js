@@ -39,10 +39,10 @@ function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
                 clientUser.setUsername(newName).then(u => console.log('Updated username to ' + u.username)).catch(console.error)
             }
 
-            if (cliArgs[2] === 'updateavatar') {
-                let newAvatar = cliArgs[3] || './resources/no-dweebs.png'
-                clientUser.setAvatar(newAvatar).then(u => console.log('Updated avatar to ' + newAvatar)).catch(console.error)
-            }
+            // if (cliArgs[2] === 'updateavatar') {
+            //     let newAvatar = cliArgs[3] || './resources/no-dweebs.png'
+            //     clientUser.setAvatar(newAvatar).then(u => console.log('Updated avatar to ' + newAvatar)).catch(console.error)
+            // }
             console.log(name + ' is ready for action.')
         })
 
@@ -417,6 +417,7 @@ function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
 
                     if (err) {
                         console.log(err)
+                        msg.channel.sendMessage('Asså, jag tycker om ditt sök, men jag kan inte spela det här. Säker på att det inte är en kanal?')
                         stopStream(msg, false) // if an error happens, just stop pls
                         return
                     }
