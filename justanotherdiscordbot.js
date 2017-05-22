@@ -380,7 +380,12 @@ function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
 
     function playOrQueueStream (msg, res, onPlaylist, connection, cb) {
         let guild = msg.guild
-        let channel = guild.channels.find('name', 'General')
+        let channel = guild.channels.find('name', 'Music')
+
+        if (!channel) {
+            msg.channel.sendMessage('You gotta make a channel called "Music", comrade.')
+            return
+        }
 
         if (!onPlaylist) {
 
@@ -441,7 +446,12 @@ function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
 
     function playAudioFile (msg, filePath, cb) {
         let guild = msg.guild
-        let channel = guild.channels.find('name', 'General')
+        let channel = guild.channels.find('name', 'Music')
+
+        if (!channel) {
+            msg.channel.sendMessage('You gotta make a channel called "Music", comrade.')
+            return
+        }
 
         if (!ytQueue.hasOwnProperty(guild.id)) {
             ytQueue[guild.id] = {
