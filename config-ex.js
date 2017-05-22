@@ -1,16 +1,21 @@
 module.exports = {
-    token: '',
+    token: '', // find this on discordapp.com/developers/applications
     commandPrefixes: [
-        ['poosy'],
-        ['poosy', 'pls'],
-        ['poosy', 'please']
+        ['poosy', 'pls'], //poosy pls <command>
     ],
     databaseName: 'poosybot.db',
 
     youtubeApiUrl: 'https://www.googleapis.com/youtube/v3/',
-    youtubeApiKey: '',
+    youtubeApiKey: '', // find this on youtube developer dashboard
+    bannedYoutubeIds: [
+        'ABhDiXbUaBE',
+        'kfVsfOSbJY0',
+        'dQw4w9WgXcQ',
+        'AW0q7itgBMg',
+        'kffacxfA7G4',
+    ],
 
     startMoney: 0,
-    raidTime: 60, // in seconds
+    raidTime: 3, // in seconds
     defaultRaidPrize: 100,
 }
