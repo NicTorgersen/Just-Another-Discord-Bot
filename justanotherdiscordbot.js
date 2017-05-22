@@ -210,9 +210,9 @@ function JustAnotherDiscordBot (DiscordClient, dbHandle, config, words) {
 
                             dbHandle.getMoney(recv.id, (obj) => {
                                 if (mentioned)
-                                    msg.reply(recv.username + ' has ' + obj.money + ' poosyloons.')
+                                    msg.reply(recv.username + ' has ' + obj.money + ((obj.money === 1) ? ' poosyloon' : ' poosyloons.'))
                                 else
-                                    msg.reply('you have ' + obj.money + ' poosyloons.')
+                                    msg.reply('you have ' + obj.money + ((obj.money === 1) ? ' poosyloon' : ' poosyloons.'))
                             })
                     }
                     break
