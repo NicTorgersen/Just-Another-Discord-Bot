@@ -3,7 +3,7 @@ module.exports = {
     commandPrefixes: [
         ['poosy', 'pls'], //poosy pls <command>
     ],
-    databaseName: 'poosybot.db',
+    databaseName: 'justanotherdiscordbot.db',
 
     youtubeApiUrl: 'https://www.googleapis.com/youtube/v3/',
     youtubeApiKey: '', // find this on youtube developer dashboard
