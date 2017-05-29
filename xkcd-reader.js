@@ -1,10 +1,11 @@
 "use strict"
-const http = require('http')
+const https = require('https')
 
 function XKCDReader () {
     function getCurrent (cb) {
-        http.get('http://xkcd.com/info.0.json', (result) => {
+        https.get('https://xkcd.com/info.0.json', (result) => {
             let body = ""
+
             result.on('data', (chunk) => {
                 body += chunk
             })
@@ -18,8 +19,8 @@ function XKCDReader () {
     function getSpecific (id, cb) {
         let idRegex = /^([0-9]+)$/
         if (idRegex.test(id)) {
-            let url = 'http://xkcd.com/' + id + '/info.0.json'
-            http.get(url, (result) => {
+            let url = 'https://xkcd.com/' + id + '/info.0.json'
+            https.get(url, (result) => {
                 let body = ""
 
                 result.on('data', (chunk) => {
@@ -37,8 +38,8 @@ function XKCDReader () {
         // Make HTTP request and handle response
         getCurrent((res) => {
             let rnd = Math.floor((Math.random() * res.num) + 1)
-            let url = 'http://xkcd.com/' + rnd + '/info.0.json'
-            http.get(url, (result) => {
+            let url = 'https://xkcd.com/' + rnd + '/info.0.json'
+            https.get(url, (result) => {
                 let body = ""
 
                 result.on('data', (chunk) => {
